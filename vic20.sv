@@ -56,17 +56,31 @@ module vic20_mist
    output        SDRAM_CKE,
 
 `ifdef DEMISTIFY
-   input         PS2_CLK_IN,
+    input         PS2_CLK_IN,
 	input         PS2_DAT_IN,
-   input  [64:0] C64_KEYS,
-   input         TAPE_BUTTON_N,
+    input  [64:0] C64_KEYS,
+    input         TAPE_BUTTON_N,
 	input         IEC_ATN_I,
 	input         IEC_DATA_I,
 	input         IEC_CLK_I,
 	output        IEC_ATN_O,
 	output        IEC_DATA_O,
 	output        IEC_CLK_O,
+
+    output [15:0] DAC_L,      
+    output [15:0] DAC_R,
+
+    output        HDMI_CLK,  // Direct HDMI
+
+    output 		  VGA_DE,	 // HDMI
+    output		  VGA_CLK,
+    output  [5:0] vga_x_r,
+    output  [5:0] vga_x_g,
+    output  [5:0] vga_x_b,
+    output 		  vga_x_hs,
+    output 		  vga_x_vs,
 `endif
+
    input         UART_RX,
    output        UART_TX
 );
@@ -187,10 +201,13 @@ pll_reconfig pll_reconfig_inst
     .write_rom_ena(pll_write_rom_ena)
 );
 
+
+`ifdef DEMISTIFY_ATLAS_CYC
 pll_vic20 pll_vic20
 (
     .inclk0(CLOCK_27),
-    .c0(clk_sys),  //35.48 MHz PAL, 28.63 MHz NTSC
+    .c0(clk_sys),                   //35.48 MHz PAL,    28.63 MHz NTSC
+    .c1(HDMI_CLK),                  // x5 Direct HDMI   143.15 MHz
     .areset(pll_areset),
     .scanclk(pll_scanclk),
     .scandata(pll_scandata),
@@ -200,6 +217,22 @@ pll_vic20 pll_vic20
     .scandone(pll_scandone),
     .locked(pll_locked)
 );
+`else
+pll_vic20 pll_vic20
+(
+    .inclk0(CLOCK_27),
+    .c0(clk_sys),                   //35.48 MHz PAL, 28.63 MHz NTSC
+    .areset(pll_areset),
+    .scanclk(pll_scanclk),
+    .scandata(pll_scandata),
+    .scanclkena(pll_scanclkena),
+    .configupdate(pll_configupdate),
+    .scandataout(pll_scandataout),
+    .scandone(pll_scandone),
+    .locked(pll_locked)
+);
+`endif
+
 
 
 always @(posedge clk_32) begin
@@ -278,7 +311,7 @@ wire [31:0] status;
 wire        st_reset               = status[0];
 wire        st_cart_unload         = status[1];
 wire        st_crt_no_load_address = status[2];
-wire        st_ntsc                = status[3];
+wire        st_ntsc                = status[3];        //negated defaults to NTSC
 wire  [1:0] st_ram_expansion       = status[5:4];
 wire        st_3k_expansion        = status[6];
 wire  [1:0] st_8k_rom              = status[8:7];
@@ -421,7 +454,10 @@ vic20 #(.I_EXTERNAL_ROM(1'b1)) VIC20
     .O_VIDEO_B(B_O),
     .O_HSYNC(HS_O),
     .O_VSYNC(VS_O),
-//    .O_DE     => core_blankn_s,
+
+    `ifdef DEMISTIFY
+    .O_DE   (vga_de_o),     
+    `endif
 
     .atn_o(vic20_iec_atn_o),
     .clk_o(vic20_iec_clk_o),
@@ -790,6 +826,13 @@ sigma_delta_dac #(15) dac_r
     .DACin(audio_out[16] ? 16'hffff : audio_out),
     .DACout(AUDIO_R)
 );
+
+`ifdef DEMISTIFY
+// out = sel + tape.  (Where sel is either filtered or unfiltered audio)
+assign DAC_L = {~audio_sel[15],audio_sel[14:0]};
+assign DAC_R = {~audio_out[15],audio_out[14:0]};
+`endif
+
 //////////////////   VIDEO   //////////////////
 
 wire  [3:0] R_O;
@@ -799,6 +842,55 @@ wire        HS_O;
 wire        VS_O;
 
 wire        hs,vs;
+
+`ifdef DEMISTIFY
+parameter OSD_X_OFFSET = 10'd0;
+parameter OSD_Y_OFFSET = 10'd0;
+parameter OSD_COLOR    = 3'd4;
+parameter OSD_AUTO_CE = 1'b1;
+
+wire [5:0] osd_r_o;
+wire [5:0] osd_g_o;
+wire [5:0] osd_b_o;
+wire ce_x1;
+wire vga_de_o;
+
+osd #(OSD_X_OFFSET, OSD_Y_OFFSET, OSD_COLOR, OSD_AUTO_CE) osd
+(
+	.clk_sys ( clk_sys     ),
+	.rotate  ( 2'b00   ),		// Rotate OSD [0] - rotate [1] - left or right
+	.ce      ( ce_x1   ),		// clk_sys/4
+	.SPI_DI  ( SPI_DI  ),
+	.SPI_SCK ( SPI_SCK ),
+	.SPI_SS3 ( SPI_SS3 ),
+	.R_in    ( {R_O, R_O[3:2]} ),
+	.G_in    ( {G_O, G_O[3:2]} ),
+	.B_in    ( {B_O, B_O[3:2]} ),
+	.HSync   ( HS_O  ),
+	.VSync   ( VS_O  ),
+	.R_out   ( osd_r_o ),
+	.G_out   ( osd_g_o ),
+	.B_out   ( osd_b_o )
+);
+
+// Without OSD
+// assign vga_x_r  = {R_O, R_O[3:2]};
+// assign vga_x_g  = {G_O, G_O[3:2]};
+// assign vga_x_b  = {B_O, B_O[3:2]};
+
+// OSD output
+assign vga_x_r  = osd_r_o;
+assign vga_x_g  = osd_g_o;
+assign vga_x_b  = osd_b_o;
+assign vga_x_hs = HS_O;
+assign vga_x_vs = VS_O;
+
+assign VGA_CLK = clk_sys; 
+assign VGA_DE  = vga_de_o; 
+
+`endif
+
+
 
 mist_video #(.COLOR_DEPTH(4), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
     .clk_sys     ( clk_sys    ),
@@ -839,6 +931,11 @@ mist_video #(.COLOR_DEPTH(4), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
     .VGA_B       ( VGA_B      ),
     .VGA_VS      ( vs         ),
     .VGA_HS      ( hs         )
+
+    `ifdef DEMISTIFY_HDMI
+                                ,
+    .ce_x1_o	 ( ce_x1	  )
+    `endif
 );
 
 // Use different alignment of csync @15kHz

@@ -60,6 +60,7 @@ tns:
 	@for BOARD in ${BOARDS}; do \
 		echo $$BOARD; \
 		grep -r Design-wide\ TNS $$BOARD/output_files/*.rpt; \
+		echo -ne '\007'; \
 	done
 
 .PHONY: mist

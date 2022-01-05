@@ -1,5 +1,6 @@
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) T65/T65.qip]
-set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "mist-modules/mist.qip"]
+#set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) "mist-modules/mist.qip"]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) mist-modules.qip ]
 set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) vic20.sv]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) keyboard.v]
 set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) sdram.sv]

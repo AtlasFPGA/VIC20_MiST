@@ -1,5 +1,7 @@
 # VIC-20 for [MIST Board](https://github.com/mist-devel/mist-board/wiki)
 
+**Check board folders READMEs for specific information.** 
+
 ### Features:
 - Based on [The Replay Board](http://www.fpgaarcade.com/kb/commodore-vic-20/) code
 - 3k RAM Expansion at $0400
