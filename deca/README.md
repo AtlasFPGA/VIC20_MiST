@@ -23,10 +23,11 @@ Special thanks to Alastair M. Robinson creator of [DeMiSTify](https://github.com
 
 ##### Versions:
 
-v0.1 First revision
-v0.2 I2S audio improved
-v0.3 EAR function to load tapes is enabled in fpga side (could not be tested)
-v0.4 Minor changes not afecting functionality
+- v0.1 First revision
+- v0.2 I2S audio improved
+- v0.3 EAR function to load tapes is enabled in fpga side (could not be tested)
+- v0.4 Minor changes not afecting functionality
+- v0.5 changed to fork from @robinsonb5. Added megacart feature
 
 ### STATUS
 

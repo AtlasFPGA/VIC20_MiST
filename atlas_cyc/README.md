@@ -20,9 +20,10 @@ Special thanks to Alastair M. Robinson creator of [DeMiSTify](https://github.com
 
 ##### Versions:
 
-v0.1 Initial release HDMI output not working
-v0.2 VGA output & EAR enabled in fpga (not tested)
-v0.4 HDMI video working
+- v0.1 Initial release HDMI output not working
+- v0.2 VGA output & EAR enabled in fpga (not tested)
+- v0.4 HDMI video working
+- v0.5 changed to fork from @robinsonb5. Added megacart feature
 
 ### STATUS
 
