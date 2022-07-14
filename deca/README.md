@@ -6,6 +6,8 @@ Special thanks to Alastair M. Robinson creator of [DeMiSTify](https://github.com
 
 [Read this guide if you want to know how I DeMiSTified this core](https://github.com/DECAfpga/DECA_board/tree/main/Tutorials/DeMiSTify).
 
+**Now compatible with [Deca Retro Cape 2](https://github.com/somhi/DECA_retro_cape_2)** (new location for 3 pins of old SDRAM modules). Otherwise see pinout below to connect everything through GPIOs.
+
 **Features for Deca board:**
 
 * HDMI video output (special resolution will not work on all LCD monitors)
